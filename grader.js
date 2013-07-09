@@ -9,7 +9,7 @@ var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
 var URL_DEFAULT = "https://mighty-fjord-9128.herokuapp.com"
 
-var getHtmlContent, checkError;
+var checkError;
 
 var assertFileExists = function (infile) {
   var instr = infile.toString();
@@ -48,25 +48,14 @@ var clone = function (fn) {
 
 var checkJson, outJson, toCheck;
 
-getHtmlContent = function () {
-  var htmlString = undefined; 
-  if (checkError === undefined) {
-    console.log('defining checkError');
-    var checkError = function (requestResponse) {
-      if (requestResponse instanceof Error) {
-        console.error("Could not reach url %s", program.url);
-        console.error(requestResponse.message);
-        process.exit(1);
-      }
-      else {
-       htmlString = requestResponse; 
-      }
-    }
-  return checkError;
+checkError = function (result, response) {
+  if (result instanceof Error) {
+    console.error("Could not reach url %s", program.url);
+    console.error(response.message);
+    process.exit(1);
   }
   else {
-    console.log('returning htmlString: ' + htmlString);
-    return htmlString;
+     return result; 
   }
 }
 
@@ -74,8 +63,9 @@ if(require.main == module)
 {
   program.option('-c, --checks <check_file>', 'Path to checks.json',
     clone(assertFileExists), CHECKSFILE_DEFAULT).option(
-    '-f, --file <html_file>', 'Path to index.html. Cannot be used with --url', clone(assertFileExists),
-    HTMLFILE_DEFAULT).option('-u, --url [url]', 'Url to web page to check. Cannot be used with --file', URL_DEFAULT).parse(process.argv);
+    '-f, --file <html_file>', 'Path to index.html. Cannot be used with --url',
+clone(assertFileExists), HTMLFILE_DEFAULT)
+.option('-u, --url [url]', 'Url to web page to check. Cannot be used with --file', URL_DEFAULT).parse(process.argv);
   if (program.rawArgs.length > 6) {
     console.error("Too many arguments");
     program.help();
@@ -93,8 +83,6 @@ if(require.main == module)
 
   toCheck = toCheck || '--file';
 
-  checkError = getHtmlContent();
-
   if (toCheck === '--file') {
     htmlString = filesystem_lib.readFileSync(program.file);
   }
@@ -102,7 +90,7 @@ if(require.main == module)
     htmlString = restler_lib.get(program.url).on('complete', checkError);
   }
  
-  console.log(getHtmlContent());
+  console.log(htmlString);
 
   checkJson = checkHtml(htmlString, program.checks);
   outJson = JSON.stringify(checkJson, null, 4);
