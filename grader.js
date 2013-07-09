@@ -9,7 +9,6 @@ var url_lib = require('url');
 var HTMLFILE_DEFAULT = "index.html";
 var CHECKSFILE_DEFAULT = "checks.json";
 var URL_DEFAULT = "http://mighty-fjord-9128.herokuapp.com"
-var TMP_URL_FILE = "temp_index.html";
 
 var error, printResponse, htmlString;
 
@@ -53,28 +52,18 @@ error = function(response) {
 };
 
 printResponse = function (result) {
+  var htmlString = '';
   result.setEncoding('utf8');
   result.on('data', function (chunk) {
-    filesystem_lib.writeFile("temp_index.html", chunk, function (error) {
-      if (error) {
-        console.error("Couldn't write file");
-        process.exit(1);
-      }
-    });
+    
+    htmlString += chunk;
+
   }).on('end', function () {
-    filesystem_lib.readFile("temp_index.html", function (error, data) {
       var checkJson, outJson;
-      if (error) {
-        console.error("Couldn't read file");
-        process.exit(1);
-      }
-      else {
-        checkJson = checkHtml(data, program.checks);
-        outJson = JSON.stringify(checkJson, null, 4);
-        
-        console.log(outJson);
-      }
-    });
+      checkJson = checkHtml(htmlString, program.checks);
+      outJson = JSON.stringify(checkJson, null, 4);
+      
+      console.log(outJson);
   });
 };
 
